@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Canvas点击图片改变颜色</title>
+</head>
+
+<body>
+    <canvas id="myCanvas" style="border:1px solid black"></canvas>
+</body>
+<script type="text/javascript">
+    const cvs = document.querySelector('canvas');
+
+    const ctx = cvs.getContext('2d', {
+        willReadFrequently: true,
+    });
+
+
+    //初始化
+    function init() {
+        const img = new Image();
+        //等待图片加载完后绘制canvas图片
+        img.onload = () => {
+            cvs.width = img.width;
+            cvs.height = img.height;
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+        }
+        img.src = './rethat.png';
+    }
+
+    init()
+
+    //监听canvas点击位置
+    cvs.addEventListener('click', (e) => {
+        //获取点击位置
+        const x = e.offsetX, y = e.offsetY;
+        console.log(x, y)
+        //获取图片数据
+        const imgData = ctx.getImageData(0, 0, cvs.width, cvs.height);
+        //获取点击颜色
+        const clickColor = getColor(x, y, imgData.data);
+        //改变颜色(目标颜色)
+        const targetColor = [0, 0, 0, 255];
+        changeColor(x, y, targetColor, imgData.data, clickColor);
+        ctx.putImageData(imgData, 0, 0);
+    })
+
+    //改变颜色
+    function changeColor(x, y, targetColor, imgData, clickColor) {
+        if (x < 0 || x >= cvs.width || y < 0 || y >= cvs.height) {
+            return;
+        }
+        const curColor = getColor(x, y, imgData);
+        if (diff(clickColor, curColor) > 100) {
+            return;
+        }
+        if (diff(curColor, targetColor) === 0) {
+            return;
+        }
+        const index = point2Index(x, y)
+        // imgData[index] = targetColor[0];
+        // imgData[index + 1] = targetColor[1];
+        // imgData[index + 2] = targetColor[2];
+        // imgData[index + 3] = targetColor[3];
+        imgData.set(targetColor, index);
+        changeColor(x + 1, y, targetColor, imgData, clickColor);
+        changeColor(x - 1, y, targetColor, imgData, clickColor);
+        changeColor(x, y + 1, targetColor, imgData, clickColor);
+        changeColor(x, y - 1, targetColor, imgData, clickColor);
+    }
+
+    //判断点击颜色是否不一致
+    function diff(color1, color2) {
+        return Math.abs(color1[0] - color2[0]) + Math.abs(color1[1] - color2[1]) + Math.abs(color1[2] - color2[2]) + Math.abs(color1[3] - color2[3]);
+    }
+
+    //获取点击颜色在图片数组的位置转换
+    function point2Index(x, y) {
+        return (y * cvs.width + x) * 4;
+    }
+
+    //获取图片颜色
+    function getColor(x, y, imgData) {
+        const index = point2Index(x, y);
+        return [
+            imgData[index],
+            imgData[index + 1],
+            imgData[index + 2],
+            imgData[index + 3],
+        ]
+
+
+    }
+</script>
+
+</html>
